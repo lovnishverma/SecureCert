@@ -30,12 +30,19 @@ SecureCert is a blockchain-powered certificate verification system that ensures 
 ### 🌟 Key Features
 
 ✅ **Immutable Storage**: Certificate hashes stored on blockchain cannot be altered
+
 ✅ **Instant Verification**: Real-time certificate authenticity checks
+
 ✅ **Decentralized**: No single point of failure
+
 ✅ **Cost-Effective**: Minimal gas fees using efficient hash storage
+
 ✅ **User-Friendly**: Simple web interface for issuers and verifiers
+
 ✅ **Privacy-Preserving**: Only cryptographic hashes stored on-chain
+
 ✅ **MetaMask Integration**: Transactions signed securely by users in-browser
+
 ✅ **Transaction Logging**: Issued certificate tx hashes saved locally (`transactions.json`)
 
 ---
