@@ -1,0 +1,192 @@
+{% extends "layout.html" %}
+{% block title %}Issue Certificate - SecureCert{% endblock %}
+{% block content %}
+<section class="form-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-6">
+        <div class="form-container" data-aos="fade-up">
+          <div class="form-header">
+            <div class="form-icon">
+              <i class="fas fa-plus-circle"></i>
+            </div>
+            <h2>Issue New Certificate</h2>
+            <p>Create an immutable record on the blockchain</p>
+          </div>
+          
+          <form method="post" enctype="multipart/form-data" class="certificate-form" id="issueForm">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-tag"></i>
+                Certificate ID
+              </label>
+              <input 
+                type="text" 
+                name="cert_id" 
+                class="form-control" 
+                placeholder="Enter unique certificate identifier" 
+                required
+              >
+              <div class="form-help">
+                <i class="fas fa-info-circle"></i>
+                This should be a unique identifier (e.g., CERT-2024-001)
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-sticky-note"></i>
+                Optional Note / Metadata
+              </label>
+              <input 
+                type="text" 
+                name="txid_note" 
+                class="form-control" 
+                placeholder="Add any additional information..."
+              >
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-file-upload"></i>
+                Certificate File
+              </label>
+              <div class="file-upload-area" id="fileUploadArea">
+                <input 
+                  type="file" 
+                  name="file" 
+                  id="fileInput" 
+                  class="file-input" 
+                  accept=".pdf,.jpg,.jpeg,.png" 
+                  required
+                >
+                <div class="file-upload-content">
+                  <i class="fas fa-cloud-upload-alt"></i>
+                  <p>Click to upload or drag and drop</p>
+                  <span class="file-types">PDF, JPG, JPEG, PNG (Max 10MB)</span>
+                </div>
+              </div>
+              <div class="file-preview" id="filePreview" style="display: none;">
+                <div class="file-info">
+                  <i class="fas fa-file"></i>
+                  <span class="file-name"></span>
+                  <span class="file-size"></span>
+                </div>
+                <button type="button" class="btn-remove" onclick="removeFile()">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="blockchain-info">
+              <i class="fas fa-info-circle"></i>
+              <p>Your certificate will be hashed using SHA-256 and stored immutably on the Ethereum blockchain. The original file is not stored for privacy.</p>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">
+              <i class="fas fa-plus-circle"></i>
+              Issue Certificate on Blockchain
+            </button>
+          </form>
+
+          <!-- Processing Indicator -->
+          <div class="processing-overlay" id="processingOverlay" style="display: none;">
+            <div class="processing-content">
+              <div class="spinner"></div>
+              <h4>Processing Transaction...</h4>
+              <p>Storing certificate hash on Ethereum blockchain</p>
+              <div class="processing-steps">
+                <div class="step active">
+                  <i class="fas fa-fingerprint"></i>
+                  <span>Computing SHA-256 hash</span>
+                </div>
+                <div class="step">
+                  <i class="fas fa-signature"></i>
+                  <span>Signing transaction</span>
+                </div>
+                <div class="step">
+                  <i class="fas fa-cube"></i>
+                  <span>Writing to blockchain</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// File upload handling
+const fileInput = document.getElementById('fileInput');
+const fileUploadArea = document.getElementById('fileUploadArea');
+const filePreview = document.getElementById('filePreview');
+
+fileUploadArea.addEventListener('click', () => fileInput.click());
+fileUploadArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  fileUploadArea.classList.add('dragover');
+});
+fileUploadArea.addEventListener('dragleave', () => {
+  fileUploadArea.classList.remove('dragover');
+});
+fileUploadArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  fileUploadArea.classList.remove('dragover');
+  const files = e.dataTransfer.files;
+  if (files.length > 0) {
+    fileInput.files = files;
+    showFilePreview(files[0]);
+  }
+});
+
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length > 0) {
+    showFilePreview(e.target.files[0]);
+  }
+});
+
+function showFilePreview(file) {
+  if (file.size > 10 * 1024 * 1024) {
+    alert('File size must be less than 10MB');
+    return;
+  }
+  
+  document.querySelector('.file-name').textContent = file.name;
+  document.querySelector('.file-size').textContent = formatFileSize(file.size);
+  fileUploadArea.style.display = 'none';
+  filePreview.style.display = 'flex';
+}
+
+function removeFile() {
+  fileInput.value = '';
+  fileUploadArea.style.display = 'flex';
+  filePreview.style.display = 'none';
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Form submission
+document.getElementById('issueForm').addEventListener('submit', function() {
+  document.getElementById('processingOverlay').style.display = 'flex';
+  
+  // Animate processing steps
+  setTimeout(() => {
+    document.querySelectorAll('.processing-steps .step')[1].classList.add('active');
+  }, 2000);
+  
+  setTimeout(() => {
+    document.querySelectorAll('.processing-steps .step')[2].classList.add('active');
+  }, 4000);
+});
+</script>
+{% endblock %}
