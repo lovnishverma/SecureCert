@@ -1,0 +1,343 @@
+{% extends "layout.html" %}
+{% block title %}Verify Certificate - SecureCert{% endblock %}
+{% block content %}
+<section class="form-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-6">
+        {% if not result %}
+        <div class="form-container" data-aos="fade-up">
+          <div class="form-header">
+            <div class="form-icon verify-icon">
+              <i class="fas fa-search"></i>
+            </div>
+            <h2>Verify Certificate</h2>
+            <p>Check authenticity against blockchain records</p>
+          </div>
+          
+          <form method="post" enctype="multipart/form-data" class="certificate-form" id="verifyForm">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-tag"></i>
+                Certificate ID
+              </label>
+              <input 
+                type="text" 
+                name="cert_id" 
+                class="form-control" 
+                placeholder="Enter certificate identifier" 
+                required
+              >
+              <div class="form-help">
+                <i class="fas fa-info-circle"></i>
+                Enter the same ID used when issuing the certificate
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-file-upload"></i>
+                Certificate File to Verify
+              </label>
+              <div class="file-upload-area" id="fileUploadArea">
+                <input 
+                  type="file" 
+                  name="file" 
+                  id="fileInput" 
+                  class="file-input" 
+                  accept=".pdf,.jpg,.jpeg,.png" 
+                  required
+                >
+                <div class="file-upload-content">
+                  <i class="fas fa-shield-alt"></i>
+                  <p>Upload certificate to verify</p>
+                  <span class="file-types">PDF, JPG, JPEG, PNG</span>
+                </div>
+              </div>
+              <div class="file-preview" id="filePreview" style="display: none;">
+                <div class="file-info">
+                  <i class="fas fa-file"></i>
+                  <span class="file-name"></span>
+                  <span class="file-size"></span>
+                </div>
+                <button type="button" class="btn-remove" onclick="removeFile()">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="blockchain-info verify-info">
+              <i class="fas fa-shield-alt"></i>
+              <p>We'll compute the SHA-256 hash of your file and compare it with the immutable record stored on the Ethereum blockchain.</p>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-submit" id="submitBtn">
+              <i class="fas fa-search"></i>
+              Verify Certificate Authenticity
+            </button>
+          </form>
+
+          <!-- Processing Indicator -->
+          <div class="processing-overlay verify-processing" id="processingOverlay" style="display: none;">
+            <div class="processing-content">
+              <div class="spinner verify-spinner"></div>
+              <h4>Verifying Certificate...</h4>
+              <p>Checking blockchain records for authenticity</p>
+            </div>
+          </div>
+        </div>
+
+        {% else %}
+        <!-- Verification Results -->
+        <div class="result-container" data-aos="fade-up">
+          {% if match %}
+          <div class="result-card success-result">
+            <div class="result-header">
+              <div class="result-icon">
+                <i class="fas fa-check-circle"></i>
+              </div>
+              <h2>Certificate Verified ✅</h2>
+              <p class="result-status">AUTHENTIC & UNTAMPERED</p>
+            </div>
+            
+            <div class="result-details">
+              <div class="detail-group">
+                <label>Certificate ID:</label>
+                <code>{{ cert_id }}</code>
+              </div>
+              
+              <div class="detail-group">
+                <label>Blockchain Hash:</label>
+                <code class="hash-code">{{ onchain_hash }}</code>
+              </div>
+              
+              <div class="detail-group">
+                <label>File Hash:</label>
+                <code class="hash-code">{{ uploaded_hash }}</code>
+              </div>
+              
+              {% if tx_hash %}
+              <div class="detail-group">
+                <label>Transaction Hash:</label>
+                <div class="tx-hash-container">
+                  <code class="hash-code tx-hash">{{ tx_hash }}</code>
+                  <a href="https://sepolia.etherscan.io/tx/{{ tx_hash }}" target="_blank" class="etherscan-link">
+                    <i class="fas fa-external-link-alt"></i>
+                    View on Etherscan
+                  </a>
+                </div>
+              </div>
+              {% endif %}
+              
+              {% if txid %}
+              <div class="detail-group">
+                <label>Transaction Note:</label>
+                <span class="note-text">{{ txid }}</span>
+              </div>
+              {% endif %}
+              
+              {% if timestamp and timestamp > 0 %}
+              <div class="detail-group">
+                <label>Issue Date:</label>
+                <span class="timestamp-text">{{ moment(timestamp).format('MMMM Do YYYY, h:mm:ss A') if moment else timestamp|timestamp_format }}</span>
+              </div>
+              {% endif %}
+              
+              <div class="verification-proof">
+                <i class="fas fa-shield-alt"></i>
+                <span>Verified on Ethereum Blockchain (Sepolia)</span>
+                {% if tx_hash %}
+                <a href="https://sepolia.etherscan.io/tx/{{ tx_hash }}" target="_blank" class="blockchain-explorer-btn">
+                  <i class="fas fa-cube"></i>
+                  Explore Transaction
+                </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="result-card error-result">
+            <div class="result-header">
+              <div class="result-icon">
+                <i class="fas fa-times-circle"></i>
+              </div>
+              <h2>Certificate Invalid ❌</h2>
+              <p class="result-status">TAMPERED OR NOT FOUND</p>
+            </div>
+            
+            <div class="result-details">
+              <div class="detail-group">
+                <label>Certificate ID:</label>
+                <code>{{ cert_id }}</code>
+              </div>
+              
+              <div class="detail-group">
+                <label>Expected Hash:</label>
+                <code class="hash-code">{{ onchain_hash if onchain_hash != 'Certificate not found' else 'Not found on blockchain' }}</code>
+              </div>
+              
+              <div class="detail-group">
+                <label>File Hash:</label>
+                <code class="hash-code">{{ uploaded_hash }}</code>
+              </div>
+              
+              {% if tx_hash %}
+              <div class="detail-group">
+                <label>Transaction Hash:</label>
+                <div class="tx-hash-container">
+                  <code class="hash-code tx-hash">{{ tx_hash }}</code>
+                  <a href="https://sepolia.etherscan.io/tx/{{ tx_hash }}" target="_blank" class="etherscan-link">
+                    <i class="fas fa-external-link-alt"></i>
+                    View on Etherscan
+                  </a>
+                </div>
+              </div>
+              {% endif %}
+              
+              <div class="error-reason">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>
+                  {% if timestamp == 0 %}
+                  This certificate ID was never issued or doesn't exist in blockchain records.
+                  {% else %}
+                  This certificate file has been modified since issuance or doesn't match the blockchain record.
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <div class="result-actions">
+            <a href="{{ url_for('verify') }}" class="btn btn-outline-primary">
+              <i class="fas fa-search"></i>
+              Verify Another Certificate
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+              <i class="fas fa-home"></i>
+              Back to Home
+            </a>
+            {% if match and tx_hash %}
+            <a href="https://sepolia.etherscan.io/tx/{{ tx_hash }}" target="_blank" class="btn btn-info">
+              <i class="fas fa-external-link-alt"></i>
+              View Full Transaction
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// File upload handling
+const fileInput = document.getElementById('fileInput');
+const fileUploadArea = document.getElementById('fileUploadArea');
+const filePreview = document.getElementById('filePreview');
+
+if (fileUploadArea) {
+  fileUploadArea.addEventListener('click', () => fileInput.click());
+  fileUploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    fileUploadArea.classList.add('dragover');
+  });
+  fileUploadArea.addEventListener('dragleave', () => {
+    fileUploadArea.classList.remove('dragover');
+  });
+  fileUploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    fileUploadArea.classList.remove('dragover');
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      fileInput.files = files;
+      showFilePreview(files[0]);
+    }
+  });
+
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) {
+      showFilePreview(e.target.files[0]);
+    }
+  });
+}
+
+function showFilePreview(file) {
+  const fileName = document.querySelector('.file-name');
+  const fileSize = document.querySelector('.file-size');
+  
+  if (fileName && fileSize) {
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+    fileUploadArea.style.display = 'none';
+    filePreview.style.display = 'flex';
+  }
+}
+
+function removeFile() {
+  fileInput.value = '';
+  fileUploadArea.style.display = 'flex';
+  filePreview.style.display = 'none';
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+// Form submission
+const verifyForm = document.getElementById('verifyForm');
+if (verifyForm) {
+  verifyForm.addEventListener('submit', function() {
+    const overlay = document.getElementById('processingOverlay');
+    if (overlay) {
+      overlay.style.display = 'flex';
+    }
+  });
+}
+
+// Copy to clipboard functionality for hashes
+document.addEventListener('DOMContentLoaded', function() {
+  const hashCodes = document.querySelectorAll('.hash-code');
+  hashCodes.forEach(function(hashCode) {
+    hashCode.addEventListener('click', function() {
+      navigator.clipboard.writeText(this.textContent).then(function() {
+        // Create temporary tooltip
+        const tooltip = document.createElement('div');
+        tooltip.textContent = 'Copied!';
+        tooltip.style.cssText = `
+          position: absolute;
+          background: #333;
+          color: white;
+          padding: 5px 10px;
+          border-radius: 4px;
+          font-size: 12px;
+          z-index: 1000;
+          pointer-events: none;
+        `;
+        
+        document.body.appendChild(tooltip);
+        
+        const rect = hashCode.getBoundingClientRect();
+        tooltip.style.left = rect.left + 'px';
+        tooltip.style.top = (rect.top - 30) + 'px';
+        
+        setTimeout(() => {
+          document.body.removeChild(tooltip);
+        }, 2000);
+      });
+    });
+    
+    // Add cursor pointer and title
+    hashCode.style.cursor = 'pointer';
+    hashCode.title = 'Click to copy';
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,156 @@
+{% extends "layout.html" %}
+{% block title %}Issue Certificate - SecureCert{% endblock %}
+{% block content %}
+<section class="form-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-6">
+        <div class="form-container" data-aos="fade-up">
+          <div class="form-header">
+            <div class="form-icon">
+              <i class="fas fa-plus-circle"></i>
+            </div>
+            <h2>Issue New Certificate</h2>
+            <p>Create an immutable record on the blockchain</p>
+          </div>
+          
+          <form method="post" enctype="multipart/form-data" class="certificate-form" id="issueForm">
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-tag"></i>
+                Certificate ID
+              </label>
+              <input type="text" name="cert_id" class="form-control" placeholder="Enter unique certificate identifier" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-sticky-note"></i>
+                Optional Note / Metadata
+              </label>
+              <input type="text" name="txid_note" class="form-control" placeholder="Add any additional information...">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">
+                <i class="fas fa-file-upload"></i>
+                Certificate File
+              </label>
+              <input type="file" name="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" required>
+              <div class="file-preview" id="filePreview" style="display:none;">
+                <span class="file-name"></span>
+                <span class="file-size"></span>
+                <button type="button" onclick="removeFile()">Remove</button>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-primary" id="submitBtn">
+              <i class="fas fa-plus-circle"></i>
+              Issue Certificate on Blockchain
+            </button>
+          </form>
+
+          <div id="statusMessage" style="margin-top:15px;color:red;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.7.0/dist/web3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+// File preview
+const fileInput = document.getElementById('fileInput');
+const filePreview = document.getElementById('filePreview');
+
+fileInput.addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  document.querySelector('.file-name').textContent = file.name;
+  document.querySelector('.file-size').textContent = (file.size / 1024).toFixed(2) + " KB";
+  filePreview.style.display = 'block';
+});
+
+function removeFile(){
+  fileInput.value = '';
+  filePreview.style.display = 'none';
+}
+
+// Web3 + MetaMask
+const contractAddress = "{{ CONTRACT_ADDRESS }}"; // Injected by Flask
+const contractAbi = {{ ABI | safe }}; // Injected by Flask
+let web3, contract, userAccount;
+
+async function initWeb3(){
+  if(window.ethereum){
+    web3 = new Web3(window.ethereum);
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      userAccount = accounts[0];
+      contract = new web3.eth.Contract(contractAbi, contractAddress);
+    } catch(err){
+      alert("User denied MetaMask access");
+    }
+  } else {
+    alert("Please install MetaMask to use this feature");
+  }
+}
+
+initWeb3();
+
+// Helper: compute SHA-256 hash of file
+function computeFileHash(file){
+  return new Promise((resolve, reject)=>{
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const wordArray = CryptoJS.lib.WordArray.create(e.target.result);
+      const hash = CryptoJS.SHA256(wordArray).toString();
+      resolve(hash);
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// On submit
+document.getElementById('submitBtn').addEventListener('click', async function(){
+  const certId = document.querySelector('input[name="cert_id"]').value.trim();
+  const note = document.querySelector('input[name="txid_note"]').value.trim();
+  const file = fileInput.files[0];
+
+  if(!certId || !file){
+    alert("Please provide certificate ID and file");
+    return;
+  }
+
+  document.getElementById('statusMessage').textContent = "Computing SHA-256 hash...";
+  const hash = await computeFileHash(file);
+
+  document.getElementById('statusMessage').textContent = "Requesting MetaMask transaction...";
+
+  try {
+    const tx = await contract.methods.setCert(certId, '0x'+hash, note)
+      .send({ from: userAccount });
+    
+    document.getElementById('statusMessage').innerHTML = `
+      ✅ Certificate issued! <br>
+      Tx Hash: <a href="https://sepolia.etherscan.io/tx/${tx.transactionHash}" target="_blank">${tx.transactionHash}</a>
+    `;
+
+    // Save transaction hash to backend
+    fetch('/save_tx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cert_id: certId, tx_hash: tx.transactionHash })
+    });
+
+  } catch(err){
+    console.error(err);
+    document.getElementById('statusMessage').textContent = "Transaction failed or rejected.";
+  }
+});
+</script>
+{% endblock %}
