@@ -4,14 +4,14 @@ import time
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_from_directory
 from cert_utils import compute_sha256_hex
 
 # --- Setup ---
 BASE = Path(__file__).resolve().parent
 load_dotenv(BASE / '.env')
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static', static_folder='static')
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "dev-secret")
 
 UPLOAD_FOLDER = BASE / "uploads"

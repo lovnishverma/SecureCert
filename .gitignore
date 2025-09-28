@@ -29,5 +29,5 @@ Thumbs.db
 uploads/
 
 # Compiled contracts
-deploy/deployed_contract.json
+# deploy/deployed_contract.json
 

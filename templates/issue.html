@@ -5,52 +5,85 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-8 col-xl-6">
-        <div class="form-container" data-aos="fade-up">
+        <div class="form-container" data-aos="fade-up" role="region" aria-labelledby="formHeader">
           <div class="form-header">
             <div class="form-icon">
-              <i class="fas fa-plus-circle"></i>
+              <i class="fas fa-plus-circle" aria-hidden="true"></i>
             </div>
-            <h2>Issue New Certificate</h2>
+            <h2 id="formHeader">Issue New Certificate</h2>
             <p>Create an immutable record on the blockchain</p>
           </div>
           
           <form method="post" enctype="multipart/form-data" class="certificate-form" id="issueForm">
             <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-tag"></i>
+              <label class="form-label" for="cert_id">
+                <i class="fas fa-tag" aria-hidden="true"></i>
                 Certificate ID
               </label>
-              <input type="text" name="cert_id" class="form-control" placeholder="Enter unique certificate identifier" required>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-sticky-note"></i>
-                Optional Note / Metadata
-              </label>
-              <input type="text" name="txid_note" class="form-control" placeholder="Add any additional information...">
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">
-                <i class="fas fa-file-upload"></i>
-                Certificate File
-              </label>
-              <input type="file" name="file" id="fileInput" accept=".pdf,.jpg,.jpeg,.png" required>
-              <div class="file-preview" id="filePreview" style="display:none;">
-                <span class="file-name"></span>
-                <span class="file-size"></span>
-                <button type="button" onclick="removeFile()">Remove</button>
+              <input type="text" name="cert_id" id="cert_id" class="form-control" placeholder="Enter unique certificate identifier" required aria-required="true" aria-describedby="certIdHelp">
+              <div class="form-help" id="certIdHelp">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                A unique identifier for the certificate
               </div>
             </div>
 
-            <button type="button" class="btn btn-primary" id="submitBtn">
-              <i class="fas fa-plus-circle"></i>
+            <div class="form-group">
+              <label class="form-label" for="txid_note">
+                <i class="fas fa-sticky-note" aria-hidden="true"></i>
+                Optional Note / Metadata
+              </label>
+              <input type="text" name="txid_note" id="txid_note" class="form-control" placeholder="Add any additional information..." aria-describedby="noteHelp">
+              <div class="form-help" id="noteHelp">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                Additional details to store with the certificate
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="fileInput">
+                <i class="fas fa-file-upload" aria-hidden="true"></i>
+                Certificate File
+              </label>
+              <div class="file-upload-area" id="fileUploadArea" role="button" aria-describedby="fileTypes" tabindex="0">
+                <input type="file" name="file" id="fileInput" class="file-input" accept=".pdf,.jpg,.jpeg,.png" required aria-required="true">
+                <div class="file-upload-content">
+                  <i class="fas fa-cloud-upload-alt" aria-hidden="true"></i>
+                  <p>Drag and drop or click to upload</p>
+                  <div class="file-types" id="fileTypes">Supported: .pdf, .jpg, .jpeg, .png</div>
+                </div>
+              </div>
+              <div class="file-preview" id="filePreview" style="display:none;">
+                <div class="file-info">
+                  <i class="fas fa-file-alt" aria-hidden="true"></i>
+                  <span class="file-name"></span>
+                  <span class="file-size"></span>
+                </div>
+                <button type="button" class="btn-remove" onclick="removeFile()" aria-label="Remove uploaded file">
+                  <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-submit" id="submitBtn" disabled aria-disabled="true">
+              <i class="fas fa-plus-circle" aria-hidden="true"></i>
               Issue Certificate on Blockchain
             </button>
           </form>
 
-          <div id="statusMessage" style="margin-top:15px;color:red;"></div>
+          <div class="processing-overlay" id="processingOverlay" style="display:none;">
+            <div class="processing-content">
+              <div class="spinner"></div>
+              <h4>Processing Transaction</h4>
+              <p>Please wait while we issue the certificate on the blockchain...</p>
+              <div class="processing-steps">
+                <div class="step" id="stepHash"><i class="fas fa-calculator"></i> Computing SHA-256 hash</div>
+                <div class="step" id="stepMetaMask"><i class="fas fa-wallet"></i> Awaiting MetaMask confirmation</div>
+                <div class="step" id="stepBlockchain"><i class="fas fa-link"></i> Recording on blockchain</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="statusMessage" class="toast-container" role="alert" aria-live="assertive"></div>
         </div>
       </div>
     </div>
@@ -62,50 +95,167 @@
 <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.7.0/dist/web3.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script>
-// File preview
+// DOM Elements
 const fileInput = document.getElementById('fileInput');
+const fileUploadArea = document.getElementById('fileUploadArea');
 const filePreview = document.getElementById('filePreview');
+const submitBtn = document.getElementById('submitBtn');
+const certIdInput = document.getElementById('cert_id');
+const statusMessage = document.getElementById('statusMessage');
+const processingOverlay = document.getElementById('processingOverlay');
+const stepHash = document.getElementById('stepHash');
+const stepMetaMask = document.getElementById('stepMetaMask');
+const stepBlockchain = document.getElementById('stepBlockchain');
 
-fileInput.addEventListener('change', function(e){
-  const file = e.target.files[0];
-  if(!file) return;
-  document.querySelector('.file-name').textContent = file.name;
-  document.querySelector('.file-size').textContent = (file.size / 1024).toFixed(2) + " KB";
-  filePreview.style.display = 'block';
-});
-
-function removeFile(){
-  fileInput.value = '';
-  filePreview.style.display = 'none';
+// File Upload Handling
+function updateSubmitButton() {
+  const isValid = certIdInput.value.trim() && fileInput.files.length;
+  submitBtn.disabled = !isValid;
+  submitBtn.setAttribute('aria-disabled', !isValid);
 }
 
-// Web3 + MetaMask
-const contractAddress = "{{ CONTRACT_ADDRESS }}"; // Injected by Flask
-const contractAbi = {{ ABI | safe }}; // Injected by Flask
-let web3, contract, userAccount;
+certIdInput.addEventListener('input', updateSubmitButton);
 
-async function initWeb3(){
-  if(window.ethereum){
-    web3 = new Web3(window.ethereum);
-    try {
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      userAccount = accounts[0];
-      contract = new web3.eth.Contract(contractAbi, contractAddress);
-    } catch(err){
-      alert("User denied MetaMask access");
-    }
+fileUploadArea.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    document.querySelector('.file-name').textContent = file.name;
+    document.querySelector('.file-size').textContent = (file.size / 1024).toFixed(2) + ' KB';
+    filePreview.style.display = 'flex';
+    fileUploadArea.classList.add('dragover');
+    updateSubmitButton();
   } else {
-    alert("Please install MetaMask to use this feature");
+    filePreview.style.display = 'none';
+    fileUploadArea.classList.remove('dragover');
+  }
+});
+
+fileUploadArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  fileUploadArea.classList.add('dragover');
+});
+
+fileUploadArea.addEventListener('dragleave', () => fileUploadArea.classList.remove('dragover'));
+
+fileUploadArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  fileUploadArea.classList.remove('dragover');
+  fileInput.files = e.dataTransfer.files;
+  fileInput.dispatchEvent(new Event('change'));
+});
+
+fileUploadArea.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    fileInput.click();
+  }
+});
+
+function removeFile() {
+  fileInput.value = '';
+  filePreview.style.display = 'none';
+  fileUploadArea.classList.remove('dragover');
+  updateSubmitButton();
+}
+
+// Helper to show messages
+function showMessage(type, message, txHash = null) {
+  statusMessage.innerHTML = ''; // Clear previous messages
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `toast ${type}`;
+  messageDiv.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} toast-icon" aria-hidden="true"></i>
+    <div class="toast-content">${message}</div>
+    ${txHash ? `
+      <a href="https://sepolia.etherscan.io/tx/${txHash}" target="_blank" class="etherscan-link">
+        <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+        View on Etherscan
+      </a>
+    ` : ''}
+    <button class="toast-close" onclick="dismissMessage('${txHash || ''}')" aria-label="Close message">
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  `;
+  statusMessage.appendChild(messageDiv);
+
+  // Force DOM repaint
+  messageDiv.style.display = 'none';
+  messageDiv.offsetHeight; // Trigger reflow
+  messageDiv.style.display = 'block';
+
+  // Auto-dismiss error messages after 5 seconds
+  if (type === 'error') {
+    setTimeout(() => messageDiv.remove(), 5000);
   }
 }
 
-initWeb3();
+// Dismiss message and prevent reappearance
+function dismissMessage(txHash) {
+  if (txHash) {
+    localStorage.setItem('dismissedTxHash', txHash);
+    localStorage.removeItem('lastTxHash');
+  }
+  const toast = document.querySelector('.toast');
+  if (toast) toast.remove();
+}
 
-// Helper: compute SHA-256 hash of file
-function computeFileHash(file){
-  return new Promise((resolve, reject)=>{
+// Web3 and MetaMask Integration
+const contractAddress = "{{ CONTRACT_ADDRESS }}";
+const contractAbi = {{ ABI | safe }};
+let web3, contract, userAccount;
+
+async function initWeb3() {
+  if (!window.ethereum) {
+    showMessage('error', 'Please install MetaMask to use this feature');
+    return false;
+  }
+
+  try {
+    web3 = new Web3(window.ethereum);
+    const networkId = await web3.eth.net.getId();
+    if (networkId !== 11155111) { // Sepolia testnet
+      showMessage('error', 'Please switch to Sepolia testnet in MetaMask');
+      return false;
+    }
+
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    userAccount = accounts[0];
+    contract = new web3.eth.Contract(contractAbi, contractAddress);
+
+    window.ethereum.on('disconnect', () => {
+      showMessage('error', 'MetaMask disconnected. Please reconnect to continue.');
+      userAccount = null;
+      contract = null;
+      updateSubmitButton();
+    });
+
+    return true;
+  } catch (err) {
+    showMessage('error', `Failed to connect to MetaMask: ${err.message}`);
+    return false;
+  }
+}
+
+initWeb3().then((success) => {
+  if (success) updateSubmitButton();
+});
+
+// Display last transaction on page load
+window.addEventListener('load', () => {
+  const lastTx = localStorage.getItem('lastTxHash');
+  const dismissedTx = localStorage.getItem('dismissedTxHash');
+  if (lastTx && lastTx !== dismissedTx) {
+    showMessage('success', 'Certificate issued successfully!', lastTx);
+  }
+});
+
+// Compute SHA-256 hash
+function computeFileHash(file) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = function(e){
+    reader.onload = function(e) {
       const wordArray = CryptoJS.lib.WordArray.create(e.target.result);
       const hash = CryptoJS.SHA256(wordArray).toString();
       resolve(hash);
@@ -115,41 +265,66 @@ function computeFileHash(file){
   });
 }
 
-// On submit
-document.getElementById('submitBtn').addEventListener('click', async function(){
-  const certId = document.querySelector('input[name="cert_id"]').value.trim();
-  const note = document.querySelector('input[name="txid_note"]').value.trim();
+// Form Submission
+document.getElementById('issueForm').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const certId = certIdInput.value.trim();
+  const note = document.getElementById('txid_note').value.trim();
   const file = fileInput.files[0];
 
-  if(!certId || !file){
-    alert("Please provide certificate ID and file");
+  // Validate inputs
+  if (!certId || !file) {
+    showMessage('error', 'Please provide certificate ID and file');
     return;
   }
 
-  document.getElementById('statusMessage').textContent = "Computing SHA-256 hash...";
-  const hash = await computeFileHash(file);
+  // Check Web3 initialization
+  if (!web3 || !contract || !userAccount) {
+    showMessage('error', 'Blockchain connection not initialized. Please refresh and try again.');
+    return;
+  }
 
-  document.getElementById('statusMessage').textContent = "Requesting MetaMask transaction...";
+  processingOverlay.style.display = 'flex';
+  stepHash.classList.add('active');
 
   try {
-    const tx = await contract.methods.setCert(certId, '0x'+hash, note)
+    // Compute file hash
+    const hash = await computeFileHash(file);
+    stepHash.classList.remove('active');
+    stepMetaMask.classList.add('active');
+
+    // Submit transaction to blockchain
+    const tx = await contract.methods.setCert(certId, '0x' + hash, note)
       .send({ from: userAccount });
     
-    document.getElementById('statusMessage').innerHTML = `
-      ✅ Certificate issued! <br>
-      Tx Hash: <a href="https://sepolia.etherscan.io/tx/${tx.transactionHash}" target="_blank">${tx.transactionHash}</a>
-    `;
+    stepMetaMask.classList.remove('active');
+    stepBlockchain.classList.add('active');
 
-    // Save transaction hash to backend
-    fetch('/save_tx', {
+    // Save transaction to backend
+    const response = await fetch('/save_tx', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ cert_id: certId, tx_hash: tx.transactionHash })
     });
 
-  } catch(err){
-    console.error(err);
-    document.getElementById('statusMessage').textContent = "Transaction failed or rejected.";
+    if (!response.ok) {
+      throw new Error('Failed to save transaction to backend');
+    }
+
+    // Store transaction hash
+    localStorage.setItem('lastTxHash', tx.transactionHash);
+    localStorage.removeItem('dismissedTxHash'); // Reset dismissed flag
+
+    // Hide processing overlay and show success message
+    processingOverlay.style.display = 'none';
+    showMessage('success', 'Certificate issued successfully!', tx.transactionHash);
+  } catch (err) {
+    showMessage('error', `Transaction failed or rejected: ${err.message}`);
+  } finally {
+    processingOverlay.style.display = 'none';
+    stepHash.classList.remove('active');
+    stepMetaMask.classList.remove('active');
+    stepBlockchain.classList.remove('active');
   }
 });
 </script>
