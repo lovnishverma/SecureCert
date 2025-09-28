@@ -1,0 +1,450 @@
+{% extends "layout.html" %}
+{% block title %}Contract Information - SECURE-CERT{% endblock %}
+{% block content %}
+
+<style>
+/* --- Hero Section Specific Dark Mode Override --- */
+/* This rule specifically targets the animation-hero section in dark mode */
+[data-theme="dark"] .animation-hero {
+    background: var(--dark-color); /* Use the main dark background color */
+    /* Or use a specific black: background: #000000; */
+    /* Or use a very dark gradient: background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); */
+}
+
+/* --- 3D Animated Boxes Styles (from index.html) --- */
+.animation-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* Behind content */
+  pointer-events: none; /* Prevent blocking clicks on content */
+  /* Optional: Add a subtle fade effect if needed */
+  /* opacity: 0.3; */
+}
+
+.icontainer {
+  position: absolute;
+  top: 50%; /* Center vertically */
+  left: 50%; /* Center horizontally */
+  transform: translate(-50%, -50%); /* Correctly center the container */
+  /* Adjust perspective for better 3D effect relative to container size */
+  perspective: 1000px; /* Start with a moderate perspective */
+  transform-style: preserve-3d; /* Important for 3D children */
+  width: 20em; /* Adjust base size, use em for relative scaling */
+  height: 20em; /* Adjust base size */
+  /* Optional: Add a subtle animation to the container itself */
+  /* animation: rotateContainer 30s linear infinite; */
+}
+
+/* Optional: Rotate the whole container slowly */
+/*
+@keyframes rotateContainer {
+  from { transform: translate(-50%, -50%) rotateY(0deg) rotateX(10deg); }
+  to { transform: translate(-50%, -50%) rotateY(360deg) rotateX(10deg); }
+}
+*/
+
+.holder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translate3d(0em, 3em, 1.5em); /* Initial offset */
+  transform-style: preserve-3d;
+  width: 100%;
+  height: 100%;
+}
+
+.holder:nth-child(2) {
+  transform: translate(-50%, -50%) rotateY(-90deg) rotateX(90deg) translate3d(0, 3em, 1.5em); /* Side face */
+}
+.holder:nth-child(3) {
+  transform: translate(-50%, -50%) rotateZ(-90deg) rotateX(-90deg) translate3d(0, 3em, 1.5em); /* Top face */
+}
+
+/* Box styling */
+.box {
+  position: absolute;
+  top: 0; /* Start from top-left of holder */
+  left: 0;
+  transform-style: preserve-3d;
+  animation: ani-box 6s infinite ease-in-out; /* Smooth easing */
+  width: 3em;
+  height: 3em;
+  /* Optional: Add a slight glow or border */
+  /* box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); */
+}
+
+.box:before,
+.box:after {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  content: "";
+  /* Use CSS variables for colors if desired, or keep fixed */
+  /* background-color: var(--primary-color); */
+  /* background-color: var(--secondary-color); */
+  /* background-color: var(--success-color); */
+}
+
+/* Example fixed colors for each face using global CSS variables */
+.holder:nth-child(1) .box { background-color: rgba(99, 102, 241, 0.5); } /* --primary-color */
+.holder:nth-child(1) .box:before { background-color: rgba(79, 70, 229, 0.5); } /* --primary-dark */
+.holder:nth-child(1) .box:after { background-color: rgba(139, 92, 246, 0.5); } /* --primary-light */
+
+.holder:nth-child(2) .box { background-color: rgba(100, 255, 218, 0.5); } /* --secondary-color */
+.holder:nth-child(2) .box:before { background-color: rgba(94, 234, 212, 0.5); } /* --secondary-color alt */
+.holder:nth-child(2) .box:after { background-color: rgba(176, 222, 159, 0.5); } /* Feature 2 Alt */
+
+.holder:nth-child(3) .box { background-color: rgba(239, 68, 68, 0.5); } /* --error-color */
+.holder:nth-child(3) .box:before { background-color: rgba(220, 38, 38, 0.5); } /* --error-color alt */
+.holder:nth-child(3) .box:after { background-color: rgba(240, 139, 172, 0.5); } /* Feature 3 Alt */
+
+
+.box:before {
+  left: 100%;
+  bottom: 0;
+  transform: rotateY(90deg);
+  transform-origin: 0 50%;
+}
+.box:after {
+  left: 0;
+  bottom: 100%;
+  transform: rotateX(90deg);
+  transform-origin: 0 100%;
+}
+
+/* Animation keyframes for individual boxes */
+@keyframes ani-box {
+  0%, 100% { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); }
+  16.66% { transform: translate3d(-3em, 0, 0) scale3d(0.85, 0.85, 1.1); }
+  33.33% { transform: translate3d(-3em, -3em, 0) scale3d(1.1, 0.85, 0.85); }
+  50% { transform: translate3d(0, -3em, 0) scale3d(0.85, 1.1, 0.85); }
+  66.66% { transform: translate3d(0, -3em, -3em) scale3d(0.85, 0.85, 1.1); }
+  83.33% { transform: translate3d(0, 0, -3em) scale3d(1.1, 0.85, 0.85); }
+}
+
+/* --- Responsive Adjustments for Boxes --- */
+
+/* Tablet and smaller desktop */
+@media (max-width: 992px) {
+  .icontainer {
+    width: 15em; /* Smaller container */
+    height: 15em;
+    perspective: 800px; /* Adjust perspective */
+  }
+  /* Optionally, slow down animation on medium screens */
+  .box {
+    animation-duration: 7s; /* Slightly slower */
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .animation-bg {
+    /* Consider hiding the complex 3D animation on mobile */
+    display: none; /* Un-comment this line to hide on mobile */
+  }
+  /* If you want to keep it, make it much smaller */
+  /*
+  .icontainer {
+    width: 10em;
+    height: 10em;
+    perspective: 500px;
+  }
+  .box {
+    width: 2em;
+    height: 2em;
+    animation-duration: 8s;
+  }
+  */
+}
+
+@media (max-width: 576px) {
+  /* Keep the animation-bg hidden or very small */
+  /*
+  .icontainer {
+    width: 8em;
+    height: 8em;
+    perspective: 400px;
+  }
+  */
+}
+
+/* --- Original Contract Info Page Hero Styles (Adjusted) --- */
+.animation-hero {
+    position: relative; /* Changed from absolute context */
+    width: 100%;
+    min-height: 60vh; /* Keep min-height */
+    background: var(--gradient-hero); /* Use global variable initially */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 4rem 0; /* Add padding like hero section */
+    z-index: 0;
+}
+
+/* Hero content (heading/subheading) */
+.animation-hero .hero-content {
+    position: relative;
+    z-index: 1;
+    color: var(--text-primary); /* Use theme text color */
+    /* margin-top: 30vh; Removed fixed margin-top */
+    text-align: center;
+    /* Ensure content is readable over animation */
+    background: rgba(0, 0, 0, 0.3); /* Subtle overlay */
+    padding: 1rem;
+    border-radius: var(--border-radius-md);
+    margin: 0 1rem; /* Add side margins */
+    display: inline-block;
+    max-width: 800px; /* Limit max width */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-title {
+    font-size: clamp(1.5rem, 4vw, 2.5rem); /* Adjusted size */
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary); /* Ensure text color */
+}
+
+.hero-subtitle {
+    font-size: 1rem; /* Adjusted size */
+    opacity: 0.9;
+    color: var(--text-secondary); /* Ensure text color */
+}
+
+/* Mobile Responsiveness for Hero Content */
+@media (max-width: 768px) {
+  .animation-hero {
+      padding: 2rem 0;
+      min-height: 50vh; /* Adjust min-height for mobile */
+  }
+  .hero-title {
+      font-size: clamp(1.2rem, 4vw, 2rem);
+  }
+  .hero-subtitle {
+      font-size: 0.9rem;
+  }
+  .animation-hero .hero-content {
+      padding: 0.75rem;
+      margin: 0 0.5rem;
+  }
+}
+
+/* --- Original Contract Info Page Card Styles (Adjusted) --- */
+/* ---------- INFO CARD ---------- */
+.info-card {
+  background: var(--gradient-card);
+  border-radius: var(--border-radius-lg);
+  padding: 2rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  margin-bottom: 2rem;
+  transition: var(--transition-normal);
+  position: relative; /* Ensure relative positioning for pseudo-element */
+}
+
+.info-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary-color);
+}
+
+.info-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-primary);
+  transform: scaleX(0);
+  transition: var(--transition-normal);
+}
+
+.info-card:hover::before {
+  transform: scaleX(1);
+}
+
+.info-header { display: flex; align-items: center; margin-bottom: 1.5rem; }
+.info-icon { width:50px; height:50px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.25rem; margin-right:1rem; background:var(--gradient-primary); }
+.info-header h3 { margin:0; font-weight:700; color:var(--text-primary); }
+.info-item { display:flex; justify-content:space-between; align-items:center; padding:1rem 0; border-bottom:1px solid rgba(0,0,0,0.1); }
+.info-item:last-child { border-bottom:none; }
+.info-label { font-weight:600; display:flex; align-items:center; color:var(--text-primary); }
+.info-label i { margin-right:0.5rem; color:var(--primary-color); width:16px; }
+.info-value { color:var(--text-secondary); font-family:'Monaco', monospace; font-size:0.9rem; text-align:right; max-width:60%; word-break:break-all; }
+.copy-btn { background: var(--primary-color); color:white; border:none; padding:0.4rem 0.8rem; border-radius:var(--border-radius-sm); cursor:pointer; font-size:0.8rem; margin-left:0.5rem; transition:var(--transition-fast); }
+.copy-btn:hover { background: var(--primary-dark); transform:translateY(-1px); }
+.copy-btn.copied { background: var(--success-color); }
+
+.status-indicator { display:inline-flex; align-items:center; padding:0.5rem 1rem; border-radius:var(--border-radius-lg); font-weight:600; font-size:0.9rem; margin-bottom:1rem; }
+.status-online { background: rgba(16,185,129,0.1); color: var(--success-color); border:1px solid rgba(16,185,129,0.2);}
+.status-offline { background: rgba(239,68,68,0.1); color: var(--error-color); border:1px solid rgba(239,68,68,0.2);}
+.status-dot { width:8px; height:8px; border-radius:50%; margin-right:0.5rem; animation:pulse 2s infinite;}
+.status-dot.online { background: var(--success-color);}
+.status-dot.offline { background: var(--error-color);}
+@keyframes pulse {0%,100%{opacity:1;}50%{opacity:0.5;}}
+
+/* Action Buttons */
+.action-buttons { display:flex; gap:1rem; flex-wrap:wrap; justify-content:center; margin-top:2rem; }
+.btn-etherscan, .btn-home { padding:0.75rem 1.5rem; border-radius:var(--border-radius-lg); display:flex; align-items:center; gap:0.5rem; font-weight:600; text-decoration:none; transition:var(--transition-normal); border: none; }
+.btn-etherscan { background: linear-gradient(135deg, #21325b, #3c4f76); color:white; border:1px solid rgba(255,255,255,0.1);}
+.btn-etherscan:hover { transform:translateY(-2px); box-shadow: var(--shadow-lg); color: var(--secondary-color); } /* Added color change on hover */
+.btn-home { background: var(--gradient-success); color:white;}
+.btn-home:hover { transform:translateY(-2px); box-shadow: var(--shadow-lg); }
+
+/* Responsive */
+@media(max-width:768px){
+  .info-item { flex-direction:column; align-items:flex-start;}
+  .info-value { max-width:100%; text-align:left; margin-top:0.5rem;}
+  .action-buttons { flex-direction:column;}
+  .btn-etherscan, .btn-home { width:100%; max-width:300px; justify-content:center;}
+}
+</style>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-custom">
+  <div class="container">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+        <li class="breadcrumb-item"><a href="/help">Help & Support</a></li>
+        <li class="breadcrumb-item" aria-current="page">Contract Information</li>
+      </ol>
+    </nav>
+  </div>
+</div>
+
+<!-- Hero Section -->
+<section class="animation-hero position-relative"> <!-- Added position-relative -->
+  <div class="animation-bg">
+    <div class="icontainer">
+      <div class="holder"><div class="box"></div></div>
+      <div class="holder"><div class="box"></div></div>
+      <div class="holder"><div class="box"></div></div>
+    </div>
+      <!-- Floating NDU Logo -->
+  <div class="floating-logo">
+    <img src="{{ url_for('static', filename='ndu-logo.png') }}" alt="NDU Logo">
+  </div>
+  </div>
+
+  <div class="container hero-content">
+    <h1 class="hero-title" data-aos="fade-up">Smart Contract Information</h1>
+    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="100">
+      Blockchain deployment details and network configuration
+    </p>
+  </div>
+</section>
+
+<!-- Contract Info Cards -->
+<div class="container my-5">
+  <div class="info-card" data-aos="fade-up" data-aos-delay="100">
+    <div class="info-header">
+      <div class="info-icon"><i class="fas fa-file-contract"></i></div>
+      <h3>Contract Details</h3>
+    </div>
+    <div class="info-item">
+      <div class="info-label"><i class="fas fa-map-marker-alt"></i>Contract Address</div>
+      <div class="info-value">{{ CONTRACT_ADDRESS }}
+        <button class="copy-btn" onclick="copyToClipboard('{{ CONTRACT_ADDRESS }}', this)"><i class="fas fa-copy"></i></button>
+      </div>
+    </div>
+    <div class="info-item">
+      <div class="info-label"><i class="fas fa-network-wired"></i>Network</div>
+      <div class="info-value">Sepolia Testnet</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label"><i class="fas fa-link"></i>Chain ID</div>
+      <div class="info-value">11155111</div>
+    </div>
+    <div class="info-item">
+      <div class="info-label"><i class="fas fa-gas-pump"></i>Gas Token</div>
+      <div class="info-value">SepoliaETH</div>
+    </div>
+  </div>
+
+  <div class="info-card" data-aos="fade-up" data-aos-delay="200">
+    <div class="info-header">
+      <div class="info-icon"><i class="fas fa-globe"></i></div>
+      <h3>Network Configuration</h3>
+    </div>
+    <div class="info-item"><div class="info-label"><i class="fas fa-server"></i>RPC Endpoint</div><div class="info-value">sepolia.infura.io/v3/...</div></div>
+    <div class="info-item"><div class="info-label"><i class="fas fa-eye"></i>Block Explorer</div><div class="info-value">sepolia.etherscan.io</div></div>
+    <div class="info-item"><div class="info-label"><i class="fas fa-faucet-drip"></i>Test Faucet 1</div><div class="info-value"><a href="https://sepoliafaucet.com" target="_blank" class="text-primary">sepoliafaucet.com</a></div></div>
+    <div class="info-item"><div class="info-label"><i class="fas fa-faucet-drip"></i>Test Faucet 2</div><div class="info-value"><a href="https://cloud.google.com/application/web3/faucet/ethereum/sepolia" target="_blank" class="text-primary">cloud.google.com</a></div></div>
+  </div>
+
+  <!--<div class="network-warning" data-aos="fade-up" data-aos-delay="300">
+    <i class="fas fa-exclamation-triangle"></i>
+    <div>
+      <div class="warning-title">Testnet Environment</div>
+      <p class="warning-text">This contract is deployed on Sepolia testnet for development and testing purposes. Transactions use test ETH with no real value.</p>
+    </div>
+  </div> -->
+
+  <div class="action-buttons" data-aos="fade-up" data-aos-delay="400">
+    <a href="https://sepolia.etherscan.io/address/{{ CONTRACT_ADDRESS }}" target="_blank" class="btn-etherscan" rel="noopener noreferrer"><i class="fas fa-external-link-alt"></i>View on Etherscan</a>
+    <a href="{{ url_for('index') }}" class="btn-home"><i class="fas fa-home"></i>Back to Home</a>
+  </div>
+
+  <!-- Network Status -->
+  <div class="text-center mt-5" data-aos="fade-up">
+    <div class="status-indicator" id="pageNetworkStatus">
+  <span class="status-dot" id="pageStatusDot"></span>
+  <span id="pageStatusText">Checking network status...</span>
+</div>
+
+  </div>
+</div>
+
+<script>
+async function copyToClipboard(text, button){
+  try {
+    await navigator.clipboard.writeText(text);
+    const original = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-check"></i>';
+    button.classList.add('copied');
+    setTimeout(()=>{button.innerHTML = original; button.classList.remove('copied');}, 2000);
+  } catch(e){ console.error(e); }
+}
+
+async function checkPageNetworkStatus(){
+  const statusIndicator = document.getElementById('pageNetworkStatus');
+  const statusDot = document.getElementById('pageStatusDot');
+  const statusText = document.getElementById('pageStatusText');
+  try{
+    const response = await fetch("https://sepolia.infura.io/v3/4a754a0fd3ad4c7f8ef0238d161c21ff",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({jsonrpc:"2.0",method:"eth_blockNumber",params:[],id:1})
+    });
+    const online = response.ok;
+    if(online){
+      statusIndicator.className='status-indicator status-online';
+      statusDot.className='status-dot online';
+      statusText.textContent='Sepolia Network Connected';
+    } else{
+      statusIndicator.className='status-indicator status-offline';
+      statusDot.className='status-dot offline';
+      statusText.textContent='Network Connection Failed';
+    }
+  } catch(err){
+    statusIndicator.className='status-indicator status-offline';
+    statusDot.className='status-dot offline';
+    statusText.textContent='Unable to Connect';
+  }
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  checkPageNetworkStatus();
+  setInterval(checkPageNetworkStatus,30000);
+});
+
+</script>
+
+{% endblock %}
