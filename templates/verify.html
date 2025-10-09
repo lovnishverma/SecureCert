@@ -1,0 +1,637 @@
+{% extends "layout.html" %}
+{% block title %}Verify Certificate - SECURE-Cert{% endblock %}
+{% block content %}
+<style>
+/* --- Hero Section Specific Dark Mode Override --- */
+/* This rule specifically targets the animation-hero section in dark mode */
+[data-theme="dark"] .animation-hero {
+    background: var(--dark-color); /* Use the main dark background color */
+    /* Or use a specific black: background: #000000; */
+    /* Or use a very dark gradient: background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%); */
+}
+
+/* --- 3D Animated Boxes Styles (from index.html) --- */
+.animation-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* Behind content */
+  pointer-events: none; /* Prevent blocking clicks on content */
+  /* Optional: Add a subtle fade effect if needed */
+  /* opacity: 0.3; */
+}
+
+.icontainer {
+  position: absolute;
+  top: 50%; /* Center vertically */
+  left: 50%; /* Center horizontally */
+  transform: translate(-50%, -50%); /* Correctly center the container */
+  /* Adjust perspective for better 3D effect relative to container size */
+  perspective: 1000px; /* Start with a moderate perspective */
+  transform-style: preserve-3d; /* Important for 3D children */
+  width: 20em; /* Adjust base size, use em for relative scaling */
+  height: 20em; /* Adjust base size */
+  /* Optional: Add a subtle animation to the container itself */
+  /* animation: rotateContainer 30s linear infinite; */
+}
+
+/* Optional: Rotate the whole container slowly */
+/*
+@keyframes rotateContainer {
+  from { transform: translate(-50%, -50%) rotateY(0deg) rotateX(10deg); }
+  to { transform: translate(-50%, -50%) rotateY(360deg) rotateX(10deg); }
+}
+*/
+
+.holder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translate3d(0em, 3em, 1.5em); /* Initial offset */
+  transform-style: preserve-3d;
+  width: 100%;
+  height: 100%;
+}
+
+.holder:nth-child(2) {
+  transform: translate(-50%, -50%) rotateY(-90deg) rotateX(90deg) translate3d(0, 3em, 1.5em); /* Side face */
+}
+.holder:nth-child(3) {
+  transform: translate(-50%, -50%) rotateZ(-90deg) rotateX(-90deg) translate3d(0, 3em, 1.5em); /* Top face */
+}
+
+/* Box styling */
+.box {
+  position: absolute;
+  top: 0; /* Start from top-left of holder */
+  left: 0;
+  transform-style: preserve-3d;
+  animation: ani-box 6s infinite ease-in-out; /* Smooth easing */
+  width: 3em;
+  height: 3em;
+  /* Optional: Add a slight glow or border */
+  /* box-shadow: 0 0 10px rgba(255, 255, 255, 0.5); */
+}
+
+.box:before,
+.box:after {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  content: "";
+  /* Use CSS variables for colors if desired, or keep fixed */
+  /* background-color: var(--primary-color); */
+  /* background-color: var(--secondary-color); */
+  /* background-color: var(--success-color); */
+}
+
+/* Example fixed colors for each face using global CSS variables */
+.holder:nth-child(1) .box { background-color: rgba(99, 102, 241, 0.5); } /* --primary-color */
+.holder:nth-child(1) .box:before { background-color: rgba(79, 70, 229, 0.5); } /* --primary-dark */
+.holder:nth-child(1) .box:after { background-color: rgba(139, 92, 246, 0.5); } /* --primary-light */
+
+.holder:nth-child(2) .box { background-color: rgba(100, 255, 218, 0.5); } /* --secondary-color */
+.holder:nth-child(2) .box:before { background-color: rgba(94, 234, 212, 0.5); } /* --secondary-color alt */
+.holder:nth-child(2) .box:after { background-color: rgba(176, 222, 159, 0.5); } /* Feature 2 Alt */
+
+.holder:nth-child(3) .box { background-color: rgba(239, 68, 68, 0.5); } /* --error-color */
+.holder:nth-child(3) .box:before { background-color: rgba(220, 38, 38, 0.5); } /* --error-color alt */
+.holder:nth-child(3) .box:after { background-color: rgba(240, 139, 172, 0.5); } /* Feature 3 Alt */
+
+
+.box:before {
+  left: 100%;
+  bottom: 0;
+  transform: rotateY(90deg);
+  transform-origin: 0 50%;
+}
+.box:after {
+  left: 0;
+  bottom: 100%;
+  transform: rotateX(90deg);
+  transform-origin: 0 100%;
+}
+
+/* Animation keyframes for individual boxes */
+@keyframes ani-box {
+  0%, 100% { transform: translate3d(0, 0, 0) scale3d(1, 1, 1); }
+  16.66% { transform: translate3d(-3em, 0, 0) scale3d(0.85, 0.85, 1.1); }
+  33.33% { transform: translate3d(-3em, -3em, 0) scale3d(1.1, 0.85, 0.85); }
+  50% { transform: translate3d(0, -3em, 0) scale3d(0.85, 1.1, 0.85); }
+  66.66% { transform: translate3d(0, -3em, -3em) scale3d(0.85, 0.85, 1.1); }
+  83.33% { transform: translate3d(0, 0, -3em) scale3d(1.1, 0.85, 0.85); }
+}
+
+/* --- Responsive Adjustments for Boxes --- */
+
+/* Tablet and smaller desktop */
+@media (max-width: 992px) {
+  .icontainer {
+    width: 15em; /* Smaller container */
+    height: 15em;
+    perspective: 800px; /* Adjust perspective */
+  }
+  /* Optionally, slow down animation on medium screens */
+  .box {
+    animation-duration: 7s; /* Slightly slower */
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .animation-bg {
+    /* Consider hiding the complex 3D animation on mobile */
+    display: none; /* Un-comment this line to hide on mobile */
+  }
+  /* If you want to keep it, make it much smaller */
+  /*
+  .icontainer {
+    width: 10em;
+    height: 10em;
+    perspective: 500px;
+  }
+  .box {
+    width: 2em;
+    height: 2em;
+    animation-duration: 8s;
+  }
+  */
+}
+
+@media (max-width: 576px) {
+  /* Keep the animation-bg hidden or very small */
+  /*
+  .icontainer {
+    width: 8em;
+    height: 8em;
+    perspective: 400px;
+  }
+  */
+}
+
+/* --- Original Verify Page Hero Styles (Adjusted) --- */
+.animation-hero {
+    position: relative; /* Changed from absolute context */
+    width: 100%;
+    /* height: 500px; Removed fixed height, let content determine height */
+    background: var(--gradient-hero); /* Use global variable initially */
+    overflow: hidden; /* Keep overflow hidden to contain animation */
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Center content vertically */
+    padding: 4rem 0; /* Add padding like hero section */
+    z-index: 0;
+    min-height: 60vh; /* Add minimum height like contract_info.html and issue.html */
+}
+
+/* Hero content (heading/subheading) */
+.animation-hero .hero-content {
+    position: relative;
+    z-index: 1;
+    color: var(--text-primary); /* Use theme text color */
+    /* margin-top: 30vh; Removed fixed margin-top */
+    text-align: center;
+    /* Ensure content is readable over animation */
+    background: rgba(0, 0, 0, 0.3); /* Subtle overlay */
+    padding: 1rem;
+    border-radius: var(--border-radius-md);
+    margin: 0 1rem; /* Add side margins */
+    display: inline-block;
+    max-width: 800px; /* Limit max width */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-title {
+    font-size: clamp(1.5rem, 4vw, 2.5rem); /* Adjusted size */
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary); /* Ensure text color */
+}
+
+.hero-subtitle {
+    font-size: 1rem; /* Adjusted size */
+    opacity: 0.9;
+    color: var(--text-secondary); /* Ensure text color */
+}
+
+/* Mobile Responsiveness for Hero Content */
+@media (max-width: 768px) {
+  .animation-hero {
+      padding: 2rem 0;
+      min-height: 50vh; /* Adjust min-height for mobile */
+  }
+  .hero-title {
+      font-size: clamp(1.2rem, 4vw, 2rem);
+  }
+  .hero-subtitle {
+      font-size: 0.9rem;
+  }
+  .animation-hero .hero-content {
+      padding: 0.75rem;
+      margin: 0 0.5rem;
+  }
+}
+
+</style>
+
+<!-- This is not my animation :) i forked it from http://codepen.io/nw/pen/EKdBKx and changed the Sass to CSS -->
+<section class="animation-hero position-relative"> <!-- Added position-relative -->
+  <!-- Animated Boxes Background -->
+  <div class="animation-bg">
+    <div class="icontainer">
+      <div class="holder"><div class="box"></div></div>
+      <div class="holder"><div class="box"></div></div>
+      <div class="holder"><div class="box"></div></div>
+    </div>
+      <!-- Floating NDU Logo -->
+  <div class="floating-logo">
+    <img src="{{ url_for('static', filename='ndu-logo.png') }}" alt="NDU Logo">
+  </div>
+  </div>
+
+  <!-- Hero content -->
+  <div class="container text-center hero-content">
+    <h1 class="hero-title" data-aos="fade-up">Verify a Certificate</h1>
+    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="100">
+      Verify an immutable record on the blockchain
+    </p>
+  </div>
+</section>
+
+<section class="form-section">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8 col-xl-6">
+        {% if not result %}
+        <div class="form-container" data-aos="fade-up" role="region" aria-labelledby="formHeader">
+          <div class="form-header">
+            <div class="form-icon verify-icon">
+              <i class="fas fa-search" aria-hidden="true"></i>
+            </div>
+            <h2 id="formHeader">Verify Certificate</h2>
+            <p>Check authenticity against blockchain records</p>
+          </div>
+          
+          <form method="post" enctype="multipart/form-data" class="certificate-form" id="verifyForm">
+            <div class="form-group">
+              <label class="form-label" for="cert_id">
+                <i class="fas fa-tag" aria-hidden="true"></i>
+                Certificate ID
+              </label>
+              <input 
+                type="text" 
+                name="cert_id" 
+                id="cert_id"
+                class="form-control" 
+                placeholder="Enter certificate identifier" 
+                required 
+                aria-required="true" 
+                aria-describedby="certIdHelp"
+              >
+              <div class="form-help" id="certIdHelp">
+                <i class="fas fa-info-circle" aria-hidden="true"></i>
+                Enter the same ID used when issuing the certificate
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="fileInput">
+                <i class="fas fa-file-upload" aria-hidden="true"></i>
+                Certificate File to Verify
+              </label>
+              <div class="file-upload-area" id="fileUploadArea" role="button" aria-describedby="fileTypes" tabindex="0">
+                <input 
+                  type="file" 
+                  name="file" 
+                  id="fileInput" 
+                  class="file-input" 
+                  accept=".pdf,.jpg,.jpeg,.png" 
+                  required
+                  aria-required="true"
+                  aria-describedby="fileTypes"
+                >
+                <div class="file-upload-content">
+                  <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                  <p>Upload certificate to verify</p>
+                  <span class="file-types" id="fileTypes">Supported: PDF, JPG, JPEG, PNG</span>
+                </div>
+              </div>
+              <div class="file-preview" id="filePreview" style="display: none;">
+                <div class="file-info">
+                  <i class="fas fa-file-alt" aria-hidden="true"></i>
+                  <span class="file-name"></span>
+                  <span class="file-size"></span>
+                </div>
+                <button type="button" class="btn-remove" onclick="removeFile()" aria-label="Remove uploaded file">
+                  <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="blockchain-info verify-info">
+              <i class="fas fa-shield-alt" aria-hidden="true"></i>
+              <p>We'll compute the SHA-256 hash of your file and compare it with the immutable record stored on the Ethereum blockchain.</p>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-submit" id="submitBtn" disabled aria-disabled="true">
+              <i class="fas fa-search" aria-hidden="true"></i>
+              Verify Certificate Authenticity
+            </button>
+          </form>
+
+          <!-- Processing Indicator -->
+          <div class="processing-overlay verify-processing" id="processingOverlay" style="display: none;">
+            <div class="processing-content">
+              <div class="spinner verify-spinner"></div>
+              <h4>Verifying Certificate...</h4>
+              <p>Checking blockchain records for authenticity</p>
+            </div>
+          </div>
+
+          <div id="statusMessage" class="toast-container" role="alert" aria-live="assertive"></div>
+        </div>
+
+        {% else %}
+        <!-- Verification Results -->
+        <div class="result-container" data-aos="fade-up">
+          {% if match %}
+          <div class="result-card success-result">
+            <div class="result-header">
+              <div class="result-icon">
+                <i class="fas fa-check-circle" aria-hidden="true"></i>
+              </div>
+              <h2>Certificate Verified ✅</h2>
+              <p class="result-status">AUTHENTIC & UNTAMPERED</p>
+            </div>
+            
+            <div class="result-details">
+              <div class="detail-group">
+                <label>Certificate ID:</label>
+                <code class="hash-code">{{ cert_id }}</code>
+              </div>
+              
+              <div class="detail-group">
+                <label>Blockchain Hash:</label>
+                <code class="hash-code">{{ onchain_hash }}</code>
+              </div>
+              
+              <div class="detail-group">
+                <label>File Hash:</label>
+                <code class="hash-code">{{ uploaded_hash }}</code>
+              </div>
+              
+              {% if tx_hash %}
+              <div class="detail-group">
+                <label>Transaction Hash:</label>
+                <div class="tx-hash-container">
+                  <code class="hash-code tx-hash">{{ tx_hash }}</code>
+                  <a href="https://sepolia.etherscan.io/tx/{{ tx_hash }}" target="_blank" class="etherscan-link">
+                    <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                    View on Etherscan
+                  </a>
+                </div>
+              </div>
+              {% endif %}
+              
+              {% if txid %}
+              <div class="detail-group">
+                <label>Transaction Note:</label>
+                <span class="note-text">{{ txid }}</span>
+              </div>
+              {% endif %}
+              
+              {% if timestamp and timestamp > 0 %}
+              <div class="detail-group">
+                <label>Issue Date:</label>
+                <span class="timestamp-text">{{ moment(timestamp).format('MMMM Do YYYY, h:mm:ss A') if moment else timestamp|timestamp_format }}</span>
+              </div>
+              {% endif %}
+              
+              <div class="verification-proof">
+                <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                <span>Verified on Ethereum Blockchain (Sepolia)</span>
+                {% if tx_hash %}
+                <a href="https://sepolia.etherscan.io/tx/{{ tx_hash }}" target="_blank" class="blockchain-explorer-btn">
+                  <i class="fas fa-cube" aria-hidden="true"></i>
+                  Explore Transaction
+                </a>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% else %}
+          <div class="result-card error-result">
+            <div class="result-header">
+              <div class="result-icon">
+                <i class="fas fa-times-circle" aria-hidden="true"></i>
+              </div>
+              <h2>Certificate Invalid ❌</h2>
+              <p class="result-status">TAMPERED OR NOT FOUND</p>
+            </div>
+            
+            <div class="result-details">
+              <div class="detail-group">
+                <label>Certificate ID:</label>
+                <code class="hash-code">{{ cert_id }}</code>
+              </div>
+              
+              <div class="detail-group">
+                <label>Expected Hash:</label>
+                <code class="hash-code">{{ onchain_hash if onchain_hash != 'Certificate not found' else 'Not found on blockchain' }}</code>
+              </div>
+              
+              <div class="detail-group">
+                <label>File Hash:</label>
+                <code class="hash-code">{{ uploaded_hash }}</code>
+              </div>
+              
+              {% if tx_hash %}
+              <div class="detail-group">
+                <label>Transaction Hash:</label>
+                <div class="tx-hash-container">
+                  <code class="hash-code tx-hash">{{ tx_hash }}</code>
+                  <a href="https://sepolia.etherscan.io/tx/{{ tx_hash }}" target="_blank" class="etherscan-link">
+                    <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+                    View on Etherscan
+                  </a>
+                </div>
+              </div>
+              {% endif %}
+              
+              <div class="error-reason">
+                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                <span>
+                  {% if timestamp == 0 %}
+                  This certificate ID was never issued or doesn't exist in blockchain records.
+                  {% else %}
+                  This certificate file has been modified since issuance or doesn't match the blockchain record.
+                  {% endif %}
+                </span>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+          
+          <div class="result-actions">
+            <a href="{{ url_for('verify') }}" class="btn btn-outline-primary">
+              <i class="fas fa-search" aria-hidden="true"></i>
+              Verify Another Certificate
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-primary">
+              <i class="fas fa-home" aria-hidden="true"></i>
+              Back to Home
+            </a>
+            {% if match and tx_hash %}
+            <a href="https://sepolia.etherscan.io/tx/{{ tx_hash }}" target="_blank" class="btn btn-info">
+              <i class="fas fa-external-link-alt" aria-hidden="true"></i>
+              View Full Transaction
+            </a>
+            {% endif %}
+            <button class="btn btn-secondary" onclick="window.print()">
+              <i class="fas fa-print" aria-hidden="true"></i>
+              Print Verification
+            </button>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// DOM Elements
+const fileInput = document.getElementById('fileInput');
+const fileUploadArea = document.getElementById('fileUploadArea');
+const filePreview = document.getElementById('filePreview');
+const submitBtn = document.getElementById('submitBtn');
+const certIdInput = document.getElementById('cert_id');
+const statusMessage = document.getElementById('statusMessage');
+const processingOverlay = document.getElementById('processingOverlay');
+
+// File Upload Handling
+function updateSubmitButton() {
+  const isValid = certIdInput.value.trim() && fileInput.files.length;
+  submitBtn.disabled = !isValid;
+  submitBtn.setAttribute('aria-disabled', !isValid);
+}
+
+certIdInput.addEventListener('input', updateSubmitButton);
+
+fileUploadArea.addEventListener('click', () => fileInput.click());
+
+fileInput.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (file) {
+    document.querySelector('.file-name').textContent = file.name;
+    document.querySelector('.file-size').textContent = (file.size / 1024).toFixed(2) + ' KB';
+    filePreview.style.display = 'flex';
+    fileUploadArea.classList.add('dragover');
+    updateSubmitButton();
+  } else {
+    filePreview.style.display = 'none';
+    fileUploadArea.classList.remove('dragover');
+  }
+});
+
+fileUploadArea.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  fileUploadArea.classList.add('dragover');
+});
+
+fileUploadArea.addEventListener('dragleave', () => fileUploadArea.classList.remove('dragover'));
+
+fileUploadArea.addEventListener('drop', (e) => {
+  e.preventDefault();
+  fileUploadArea.classList.remove('dragover');
+  fileInput.files = e.dataTransfer.files;
+  fileInput.dispatchEvent(new Event('change'));
+});
+
+fileUploadArea.addEventListener('keypress', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    fileInput.click();
+  }
+});
+
+function removeFile() {
+  fileInput.value = '';
+  filePreview.style.display = 'none';
+  fileUploadArea.classList.remove('dragover');
+  updateSubmitButton();
+}
+
+// Helper to show messages
+function showMessage(type, message) {
+  statusMessage.innerHTML = ''; // Clear previous messages
+  const messageDiv = document.createElement('div');
+  messageDiv.className = `toast ${type}`;
+  messageDiv.innerHTML = `
+    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} toast-icon" aria-hidden="true"></i>
+    <div class="toast-content">${message}</div>
+    <button class="toast-close" onclick="this.parentElement.remove()" aria-label="Close message">
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+  `;
+  statusMessage.appendChild(messageDiv);
+
+  // Force DOM repaint
+  messageDiv.style.display = 'none';
+  messageDiv.offsetHeight; // Trigger reflow
+  messageDiv.style.display = 'block';
+
+  // Auto-dismiss error messages after 5 seconds
+  if (type === 'error') {
+    setTimeout(() => messageDiv.remove(), 5000);
+  }
+}
+
+// Form Submission
+document.getElementById('verifyForm').addEventListener('submit', async function(e) {
+  const certId = certIdInput.value.trim();
+  const file = fileInput.files[0];
+
+  // Validate inputs
+  if (!certId || !file) {
+    e.preventDefault();
+    showMessage('error', 'Please provide certificate ID and file');
+    return;
+  }
+
+  // Show processing overlay
+  processingOverlay.style.display = 'flex';
+});
+
+// Copy to clipboard functionality for hashes
+document.addEventListener('DOMContentLoaded', function() {
+  const hashCodes = document.querySelectorAll('.hash-code');
+  hashCodes.forEach(function(hashCode) {
+    const tooltip = document.createElement('span');
+    tooltip.className = 'tooltip-custom';
+    tooltip.dataset.tooltip = 'Click to copy';
+    tooltip.style.cursor = 'pointer';
+    tooltip.addEventListener('click', function() {
+      navigator.clipboard.writeText(hashCode.textContent).then(() => {
+        tooltip.dataset.tooltip = 'Copied!';
+        setTimeout(() => {
+          tooltip.dataset.tooltip = 'Click to copy';
+        }, 2000);
+      }).catch(() => {
+        showMessage('error', 'Failed to copy to clipboard');
+      });
+    });
+    hashCode.parentNode.insertBefore(tooltip, hashCode);
+    tooltip.appendChild(hashCode);
+  });
+});
+</script>
+{% endblock %}
