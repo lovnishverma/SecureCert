@@ -6,8 +6,10 @@
 **Team Members:**
 
 * Lovnish Verma (Team Leader)
-* Prateek Dhar Dwivedi
 * Aman Choudhary
+* Prateek Dhar Dwivedi
+* Rahul
+* Chandan Saroj
 
 **Hackathon:** Paranox Contest 2.O by TechXNinjas
 **Track:** Blockchain & DeFi
@@ -248,11 +250,19 @@ function revokeCert(string calldata certificateId)
 
 * Project architecture, smart contract development, blockchain integration, MetaMask flow
 
-**Prateek Dhar Dwivedi**
+**Aman Choudhary**
 
 * Flask backend, frontend UI/UX, file handling, transaction logging
 
-**Aman Choudhary**
+**Prateek Dhar Dwivedi**
+
+* Contract deployment, environment setup, debugging & QA
+
+**Rahul**
+
+* Contract deployment, environment setup, debugging & QA
+
+**Chandan Saroj**
 
 * Contract deployment, environment setup, debugging & QA
 
