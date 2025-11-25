@@ -1,5 +1,10 @@
 # 🎓 SecureCert: Blockchain-Based Certificate Verification System
 
+---
+<img width="1907" height="747" alt="image" src="https://github.com/user-attachments/assets/35f09aa9-fd4a-482a-9d75-bebdb19d9e74" />
+
+---
+
 ## 📋 Project Overview
 
 **Team Name:** Source Code
